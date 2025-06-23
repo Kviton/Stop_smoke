@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Джедай против сигарет</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #0a0a0a;
+            margin: 0;
+            padding: 10px;
+            user-select: none;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path d="M28 6L6 28M6 6l22 22" stroke="%234CAF50" stroke-width="4" stroke-linecap="round"/><text x="16" y="28" font-family="Arial" font-size="8" fill="%234CAF50" text-anchor="middle">STOP</text></svg>') 16 16, auto;
+            background-image: url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=1000');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #4CAF50;
+            width: 95%;
+            max-width: 420px;
+        }
+        
+        #game-container {
+            width: 100%;
+            height: 500px;
+            background-color: rgba(10, 10, 10, 0.7);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #4CAF50;
+            margin-bottom: 10px;
+        }
+        
+        #game-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: rgba(20, 20, 20, 0.9);
+            z-index: 20;
+            border-bottom: 1px solid #4CAF50;
+            font-size: 14px;
+        }
+        
+        .game-stat {
+            display: flex;
+            align-items: center;
+            color: #4CAF50;
+            text-shadow: 0 0 3px rgba(76, 175, 80, 0.7);
+        }
+        
+        .life {
+            color: #4CAF50;
+            font-size: 16px;
+            margin-left: 3px;
+        }
+        
+        #background-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+            font-weight: bold;
+            color: rgba(76, 175, 80, 0.1);
+            z-index: 0;
+            pointer-events: none;
+            transform: rotate(-30deg);
+            text-transform: uppercase;
+        }
+        
+        .cigarette {
+            width: 50px;
+            height: 12px;
+            background: linear-gradient(to right, #f5f5f5 70%, #a0522d 30%);
+            border-radius: 2px;
+            position: absolute;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path d="M28 6L6 28M6 6l22 22" stroke="%23ff0000" stroke-width="4" stroke-linecap="round"/><text x="16" y="28" font-family="Arial" font-size="8" fill="%23ff0000" text-anchor="middle">STOP</text></svg>') 16 16, auto;
+            transition: transform 0.1s;
+            box-shadow: 0 0 8px rgba(100, 255, 100, 0.5);
+            z-index: 10;
+        }
+        
+        .cigarette.cut {
+            animation: cutAnimation 0.5s forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes cutAnimation {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            50% { transform: translateY(-8px) rotate(-8deg); opacity: 0.8; }
+            100% { transform: translateY(15px) rotate(-45deg); opacity: 0; }
+        }
+        
+        .cigarette-piece {
+            position: absolute;
+            width: 16px;
+            height: 12px;
+            background: linear-gradient(to right, #f5f5f5 70%, #a0522d 30%);
+            border-radius: 2px;
+            z-index: 10;
+            animation: pieceFall 1s forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes pieceFall {
+            0% { transform: rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: rotate(360deg) translateY(80px) scale(0.5); opacity: 0; }
+        }
+        
+        .pill {
+            width: 28px;
+            height: 28px;
+            background: radial-gradient(circle at center, #4CAF50, #2E7D32);
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 7px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(76, 175, 80, 0.8);
+            text-shadow: 0 0 2px #000;
+            animation: pulse 1.5s infinite;
+            z-index: 10;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            padding: 8px 15px;
+            font-size: 14px;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+            z-index: 20;
+            min-width: 100px;
+        }
+        
+        #start-btn {
+            background: linear-gradient(to bottom, #4CAF50, #2E7D32);
+        }
+        
+        #pause-btn {
+            background: linear-gradient(to bottom, #2196F3, #0d47a1);
+            display: none;
+        }
+        
+        #music-btn {
+            background: linear-gradient(to bottom, #FF9800, #F57C00);
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.4);
+        }
+        
+        .control-btn:disabled {
+            background: linear-gradient(to bottom, #666, #444);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            display: none;
+            z-index: 100;
+            width: 85%;
+            max-width: 320px;
+            border: 2px solid #4CAF50;
+            box-shadow: 0 0 30px rgba(76, 175, 80, 0.6);
+        }
+        
+        #restart-btn {
+            padding: 8px 20px;
+            font-size: 14px;
+            background: linear-gradient(to bottom, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.2s;
+        }
+        
+        #restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+        
+        .jedi-text {
+            font-family: 'Arial', sans-serif;
+            color: #4CAF50;
+            text-shadow: 0 0 8px #4CAF50;
+            max-width: 100%;
+            margin: 0 auto 12px;
+            font-size: 14px;
+            padding: 0 10px;
+        }
+        
+        .victory-message {
+            color: #FFD700;
+            font-size: 16px;
+            text-shadow: 0 0 8px #FFD700;
+            margin-bottom: 12px;
+        }
+        
+        h1 {
+            color: #4CAF50;
+            text-shadow: 0 0 12px rgba(76, 175, 80, 0.7);
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <h1>Джедай против сигарет</h1>
+        <div class="jedi-text">Ты воин джедаев, борешься против зависимости. Используй свою силу!</div>
+        
+        <div id="game-container">
+            <div id="game-header">
+                <div class="game-stat">Время: <span id="time-left">60</span></div>
+                <div class="game-stat">Счет: <span id="score">0</span></div>
+                <div class="game-stat">Жизни: <span id="lives">❤️❤️❤️❤️❤️</span></div>
+            </div>
+            <div id="background-text">Stop Smoke</div>
+        </div>
+        
+        <div id="controls">
+            <button id="start-btn" class="control-btn">Старт</button>
+            <button id="pause-btn" class="control-btn">Пауза</button>
+            <button id="music-btn" class="control-btn">Музыка</button>
+        </div>
+    </div>
+    
+    <div id="game-over">
+        <h2 style="color: #4CAF50;">Победа!</h2>
+        <div class="victory-message">Ты герой. Империя в безопасности.</div>
+        <div class="victory-message">Ты победил свою зависимость.</div>
+        <div class="victory-message">Да прибудет с тобой сила.</div>
+        <p>Счет: <span id="final-score" style="color: #4CAF50; font-size: 20px;">0</span></p>
+        <button id="restart-btn">Играть снова</button>
+    </div>
+    
+    <audio id="background-music" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script>
+        // Элементы игры
+        const gameContainer = document.getElementById('game-container');
+        let scoreElement = document.getElementById('score');
+        let livesElement = document.getElementById('lives');
+        let timeLeftElement = document.getElementById('time-left');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const musicBtn = document.getElementById('music-btn');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreElement = document.getElementById('final-score');
+        const restartBtn = document.getElementById('restart-btn');
+        const backgroundMusic = document.getElementById('background-music');
+        
+        // Константы игры
+        const INITIAL_LIVES = 5;
+        const GAME_DURATION = 60;
+        const CIGARETTE_SPEED = 0.8;
+        const PILL_SPEED = 0.7;
+        const PILL_SPAWN_CHANCE = 0.1;
+        
+        // Переменные игры
+        let score = 0;
+        let lives = INITIAL_LIVES;
+        let timeLeft = GAME_DURATION;
+        let gameInterval;
+        let animationInterval;
+        let timerInterval;
+        let isGameRunning = false;
+        let isPaused = false;
+        let isMusicPlaying = true;
+        let fallingObjects = [];
+        
+        // Размеры игрового поля
+        const gameWidth = gameContainer.offsetWidth;
+        const gameHeight = gameContainer.offsetHeight;
+        const headerHeight = document.getElementById('game-header').offsetHeight;
+        
+        // Включение/выключение музыки
+        function toggleMusic() {
+            isMusicPlaying = !isMusicPlaying;
+            musicBtn.textContent = isMusicPlaying ? 'Музыка' : 'Музыка';
+            
+            if (isMusicPlaying) {
+                backgroundMusic.play();
+            } else {
+                backgroundMusic.pause();
+            }
+        }
+        
+        // Обновление отображения жизней
+        function updateLivesDisplay() {
+            livesElement.innerHTML = '';
+            for (let i = 0; i < lives; i++) {
+                livesElement.innerHTML += '❤️';
+            }
+        }
+        
+        // Создание кусочков разрезанной сигареты
+        function createCigarettePieces(x, y, count = 3) {
+            for (let i = 0; i < count; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'cigarette-piece';
+                piece.style.left = `${x + i * 8}px`;
+                piece.style.top = `${y}px`;
+                piece.style.transform = `rotate(${i * 30}deg)`;
+                gameContainer.appendChild(piece);
+                
+                setTimeout(() => {
+                    piece.remove();
+                }, 1000);
+            }
+        }
+        
+        // Создание падающей сигареты
+        function createCigarette() {
+            const cigarette = document.createElement('div');
+            cigarette.className = 'cigarette';
+            
+            // Случайная позиция по X
+            const x = Math.random() * (gameWidth - 50);
+            
+            cigarette.style.left = `${x}px`;
+            cigarette.style.top = `${headerHeight}px`;
+            
+            // Обработчик наведения
+            cigarette.addEventListener('mouseenter', () => {
+                if (!cigarette.classList.contains('cut')) {
+                    cigarette.classList.add('cut');
+                    createCigarettePieces(x, parseFloat(cigarette.style.top), 3);
+                    score++;
+                    scoreElement.textContent = score;
+                    
+                    // Удаляем через короткое время после разрезания
+                    setTimeout(() => {
+                        cigarette.remove();
+                        fallingObjects = fallingObjects.filter(obj => obj.element !== cigarette);
+                    }, 500);
+                }
+            });
+            
+            gameContainer.appendChild(cigarette);
+            
+            // Добавляем в массив падающих объектов
+            fallingObjects.push({
+                element: cigarette,
+                x: x,
+                y: headerHeight,
+                speed: CIGARETTE_SPEED * (0.7 + Math.random() * 0.6),
+                type: 'cigarette'
+            });
+        }
+        
+        // Создание таблетки
+        function createPill() {
+            const pill = document.createElement('div');
+            pill.className = 'pill';
+            pill.textContent = 'Stop smoke';
+            
+            // Случайная позиция по X
+            const x = Math.random() * (gameWidth - 28);
+            
+            pill.style.left = `${x}px`;
+            pill.style.top = `${headerHeight}px`;
+            
+            // Обработчик клика
+            pill.addEventListener('click', () => {
+                if (isPaused) return;
+                
+                pill.remove();
+                fallingObjects = fallingObjects.filter(obj => obj.element !== pill);
+                
+                // Добавляем жизнь (но не больше максимального количества)
+                if (lives < INITIAL_LIVES) {
+                    lives++;
+                    updateLivesDisplay();
+                    
+                    // Визуальный эффект при получении жизни
+                    const lifeUpMsg = document.createElement('div');
+                    lifeUpMsg.textContent = '+1 жизнь';
+                    lifeUpMsg.style.position = 'absolute';
+                    lifeUpMsg.style.top = `${pill.offsetTop}px`;
+                    lifeUpMsg.style.left = `${pill.offsetLeft}px`;
+                    lifeUpMsg.style.color = '#4CAF50';
+                    lifeUpMsg.style.fontWeight = 'bold';
+                    lifeUpMsg.style.fontSize = '14px';
+                    lifeUpMsg.style.animation = 'floatUp 1s forwards';
+                    lifeUpMsg.style.zIndex = '15';
+                    lifeUpMsg.style.textShadow = '0 0 3px #000';
+                    
+                    gameContainer.appendChild(lifeUpMsg);
+                    setTimeout(() => lifeUpMsg.remove(), 1000);
+                }
+            });
+            
+            gameContainer.appendChild(pill);
+            
+            // Добавляем в массив падающих объектов
+            fallingObjects.push({
+                element: pill,
+                x: x,
+                y: headerHeight,
+                speed: PILL_SPEED,
+                type: 'pill'
+            });
+        }
+        
+        // Обновление позиций падающих объектов
+        function updatePositions() {
+            if (isPaused) return;
+            
+            for (let i = fallingObjects.length - 1; i >= 0; i--) {
+                const obj = fallingObjects[i];
+                obj.y += obj.speed;
+                obj.element.style.top = `${obj.y}px`;
+                
+                // Проверка, достиг ли объект нижней границы
+                if (obj.y > gameHeight) {
+                    obj.element.remove();
+                    
+                    // Если это сигарета и она не была разрезана, отнимаем жизнь
+                    if (obj.type === 'cigarette' && !obj.element.classList.contains('cut')) {
+                        lives--;
+                        updateLivesDisplay();
+                        
+                        if (lives <= 0) {
+                            endGame();
+                            return;
+                        }
+                    }
+                    
+                    fallingObjects.splice(i, 1);
+                }
+            }
+        }
+        
+        // Обновление таймера
+        function updateTimer() {
+            if (isPaused) return;
+            
+            timeLeft--;
+            timeLeftElement.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+        
+        // Пауза игры
+        function togglePause() {
+            isPaused = !isPaused;
+            pauseBtn.textContent = isPaused ? 'Продолжить' : 'Пауза';
+            
+            if (isPaused) {
+                backgroundMusic.pause();
+            } else if (isMusicPlaying) {
+                backgroundMusic.play();
+            }
+        }
+        
+        // Начало игры
+        function startGame() {
+            if (isGameRunning) return;
+            
+            // Сброс состояния игры
+            isGameRunning = true;
+            isPaused = false;
+            score = 0;
+            lives = INITIAL_LIVES;
+            timeLeft = GAME_DURATION;
+            fallingObjects = [];
+            
+            scoreElement.textContent = score;
+            timeLeftElement.textContent = timeLeft;
+            updateLivesDisplay();
+            gameOverScreen.style.display = 'none';
+            pauseBtn.style.display = 'inline-block';
+            pauseBtn.textContent = 'Пауза';
+            
+            // Очищаем игровое поле
+            gameContainer.innerHTML = `
+                <div id="game-header">
+                    <div class="game-stat">Время: <span id="time-left">60</span></div>
+                    <div class="game-stat">Счет: <span id="score">0</span></div>
+                    <div class="game-stat">Жизни: <span id="lives">❤️❤️❤️❤️❤️</span></div>
+                </div>
+                <div id="background-text">Stop Smoke</div>
+            `;
+            
+            // Обновляем ссылки на элементы
+            scoreElement = document.getElementById('score');
+            livesElement = document.getElementById('lives');
+            timeLeftElement = document.getElementById('time-left');
+            
+            // Запускаем музыку
+            if (isMusicPlaying) {
+                backgroundMusic.currentTime = 0;
+                backgroundMusic.play().catch(e => console.log("Автовоспроизведение заблокировано"));
+            }
+            
+            // Запускаем игровой цикл
+            gameInterval = setInterval(() => {
+                if (!isPaused) {
+                    createCigarette();
+                    
+                    // Частое появление таблетки
+                    if (Math.random() < PILL_SPAWN_CHANCE) {
+                        createPill();
+                    }
+                }
+            }, 1000);
+            
+            // Запускаем анимацию падения
+            animationInterval = setInterval(updatePositions, 16);
+            
+            // Запускаем таймер
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            startBtn.disabled = true;
+        }
+        
+        // Конец игры
+        function endGame() {
+            isGameRunning = false;
+            clearInterval(gameInterval);
+            clearInterval(animationInterval);
+            clearInterval(timerInterval);
+            
+            finalScoreElement.textContent = score;
+            gameOverScreen.style.display = 'block';
+            startBtn.disabled = false;
+            pauseBtn.style.display = 'none';
+            
+            // Останавливаем музыку
+            backgroundMusic.pause();
+        }
+        
+        // Обработчики кнопок
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        pauseBtn.addEventListener('click', togglePause);
+        musicBtn.addEventListener('click', toggleMusic);
+        
+        // Добавляем стили для анимаций
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes floatUp {
+                0% { opacity: 1; transform: translateY(0); }
+                100% { opacity: 0; transform: translateY(-40px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

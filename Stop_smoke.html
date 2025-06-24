@@ -21,16 +21,63 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
       color: var(--text-color);
+      height: 100vh;
+    }
+
+    #topBar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: var(--bg-color);
+      z-index: 10;
+    }
+
+    #showAllBtn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: var(--btn-color);
+      cursor: pointer;
+    }
+
+    #counter {
+      font-size: 16px;
+      color: #888;
+    }
+
+    #taskCard {
+      margin-top: 80px;
+      max-width: 90%;
+      background-color: var(--card-bg);
+      padding: 20px;
+      border-radius: 18px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+      font-size: 18px;
+      line-height: 1.5;
+      display: none;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
       text-align: center;
     }
 
+    #taskCard.show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     #stopSmokeBtn {
+      margin-top: 20px;
       width: 180px;
       height: 180px;
-      border-radius: 90px;
+      border-radius: 50%;
       background-color: var(--btn-color);
       color: white;
       font-size: 20px;
@@ -45,35 +92,53 @@
       transform: scale(0.96);
     }
 
-    #taskCard {
-      margin-top: 30px;
-      max-width: 85%;
-      background-color: var(--card-bg);
-      padding: 20px;
-      border-radius: 20px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
-      font-size: 18px;
-      line-height: 1.5;
-      transition: all 0.3s ease;
-    }
-
     a {
       color: var(--btn-color);
       text-decoration: none;
-      font-weight: 500;
     }
 
     a:hover {
       text-decoration: underline;
     }
+
+    #taskListOverlay {
+      position: fixed;
+      top: 50px;
+      left: 10px;
+      background-color: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      border-radius: 10px;
+      padding: 12px;
+      max-height: 60vh;
+      overflow-y: auto;
+      font-size: 16px;
+      display: none;
+      z-index: 20;
+    }
+
+    #taskListOverlay ul {
+      padding-left: 20px;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
+  <div id="topBar">
+    <button id="showAllBtn">☰</button>
+    <div id="counter">Отказов: 0</div>
+  </div>
+
+  <div id="taskCard"></div>
   <button id="stopSmokeBtn">StopSmoke</button>
-  <div id="taskCard" style="display: none;"></div>
+
+  <div id="taskListOverlay">
+    <ul id="allTasksList"></ul>
+  </div>
+
+  <audio id="clickSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
 
   <script>
-    const tasks = [
+    const allTasks = [
       "Сделай 10 глубоких вдохов",
       "Выпей стакан воды",
       "Прогуляйся 5 минут",
@@ -83,16 +148,70 @@
       "Почисти стол или полку",
       "Запиши 3 причины бросить курить",
       "Послушай любимую песню",
-      "👉 <a href='https://t.me/StopSmokegame_bot/StopSmokeGame' target='_blank'>Сыграй в StopSmokeGame</a>"
+      "👉 <a href='https://t.me/StopSmokegame_bot/StopSmokeGame' target='_blank'>Сыграй в StopSmokeGame</a>",
+      "Запланируй отпуск или выходной",
+      "Напиши короткую заметку о своих чувствах",
+      "Сделай чашку чая или кофе",
+      "Поиграй в мобильную игру",
+      "Почитай пару страниц книги",
+      "Сделай лёгкую растяжку",
+      "Посмотри видео с животными",
+      "Составь список из 3 вещей, за которые ты благодарен",
+      "Придумай идею для подарка другу",
+      "Сделай фото чего-то красивого вокруг"
     ];
 
-    const btn = document.getElementById('stopSmokeBtn');
-    const card = document.getElementById('taskCard');
+    let remainingTasks = [...allTasks];
+    let refusalCount = 0;
 
-    btn.addEventListener('click', () => {
-      const randomIndex = Math.floor(Math.random() * tasks.length);
-      card.innerHTML = tasks[randomIndex];
-      card.style.display = 'block';
+    const taskCard = document.getElementById('taskCard');
+    const stopSmokeBtn = document.getElementById('stopSmokeBtn');
+    const clickSound = document.getElementById('clickSound');
+    const counterDisplay = document.getElementById('counter');
+    const showAllBtn = document.getElementById('showAllBtn');
+    const taskListOverlay = document.getElementById('taskListOverlay');
+    const allTasksList = document.getElementById('allTasksList');
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    shuffle(remainingTasks);
+
+    stopSmokeBtn.addEventListener('click', () => {
+      clickSound.currentTime = 0;
+      clickSound.play();
+
+      if (remainingTasks.length === 0) {
+        remainingTasks = [...allTasks];
+        shuffle(remainingTasks);
+      }
+
+      const task = remainingTasks.pop();
+      taskCard.innerHTML = task;
+      taskCard.classList.remove('show');
+      void taskCard.offsetWidth; // restart animation
+      taskCard.classList.add('show');
+
+      refusalCount++;
+      counterDisplay.textContent = `Отказов: ${refusalCount}`;
+    });
+
+    showAllBtn.addEventListener('click', () => {
+      if (taskListOverlay.style.display === 'block') {
+        taskListOverlay.style.display = 'none';
+      } else {
+        taskListOverlay.style.display = 'block';
+        allTasksList.innerHTML = '';
+        allTasks.forEach(t => {
+          const li = document.createElement('li');
+          li.innerHTML = t;
+          allTasksList.appendChild(li);
+        });
+      }
     });
 
     Telegram.WebApp.ready();
